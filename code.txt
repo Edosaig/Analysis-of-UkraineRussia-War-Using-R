@@ -1,0 +1,98 @@
+
+library(tidyr)
+library(ggplot2)
+
+
+#load data set
+russia = read.csv('../russia_losses_equipment.csv', header = T, stringsAsFactors = F)
+
+#drop NA values using library tidy 
+cleanrussia <- drop_na(russia)
+
+#checking structure of data.
+str(cleanrussia)
+
+# Checking the head of the data.
+head(cleanrussia)
+
+# Checking the Summary of the data.
+summary(cleanrussia)
+
+#creating a binary classifier
+x <- mean(cleanrussia$helicopter)
+
+#create a new variable "losshel" to assess helicopter lost, where if helicopter is > mean,  losshel ="bad" if not, losshel="good"
+cleanrussia$losshel <- as.factor(ifelse(cleanrussia$helicopter >x, "bad", "good"))
+str(cleanrussia)
+
+#create a linear regression using the "lm" command
+
+model <- lm(helicopter~aircraft + tank + APC, data=cleanrussia)
+summary(model)
+model <- lm(helicopter~MRL + military.auto + fuel.tank + drone, data=cleanrussia)
+summary(model)
+model <- lm(helicopter~naval.ship + anti.aircraft.warfare + special.equipment + mobile.SRBM.system, data=cleanrussia)
+summary(model)
+
+model <- lm(helicopter~MRL +drone + anti.aircraft.warfare + special.equipment, data=cleanrussia)
+summary(model)
+
+#creating subset from our data
+cleanrussia.sub0 <- subset(cleanrussia, select=c("day", "helicopter", "APC"))
+
+#obtain the summary of subset
+summary(cleanrussia.sub0)
+
+#Obtain the correlation of subset
+cor(cleanrussia.sub0)
+
+
+# generating the histogram of helicopter
+hist(cleanrussia.sub0$helicopter)
+
+#ploting density of helicopter
+dens <- density(cleanrussia.sub0$helicopter) 
+plot(dens)
+
+
+# generating the histogram of APC
+hist(cleanrussia.sub0$APC)
+
+#ploting density of APC
+dens <- density(cleanrussia.sub0$APC) 
+plot(dens)
+
+
+#data visualization
+ggplot(data = cleanrussia.sub0,
+       mapping = aes(x = helicopter,
+                     y = APC))+
+  geom_point(size = 2)+
+  geom_line(colour = "red")
+
+#carrying out normalty testing
+shapiro.test(cleanrussia.sub0$helicopter)
+
+#carrying out normalty testing
+shapiro.test(cleanrussia.sub0$APC)
+
+#regression analysis 
+plot(cleanrussia.sub0$helicopter, cleanrussia.sub0$APC)
+reg1 <- lm (cleanrussia.sub0$APC~cleanrussia.sub0$helicopter)
+abline(reg1)
+
+#correlation test 
+cor(cleanrussia.sub0$helicopter, cleanrussia.sub0$APC)
+cor.test(cleanrussia.sub0$helicopter, cleanrussia.sub0$APC)
+
+#create a new variable to calculate the sum of helicopter and APC that was lost for the period under consideration.
+cleanrussia.sub0$equip_loss <- (cleanrussia.sub0$helicopter + cleanrussia.sub0$APC) 
+
+#plot a graph of day aganist equiploss
+
+ggplot(cleanrussia.sub0, aes(x=equip_loss, y=day)) +
+  geom_bar(stat = "identity") +
+  theme(legend.position = "none")
+
+t.test(cleanrussia.sub0$day, cleanrussia.sub0$equip_loss)
+
